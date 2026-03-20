@@ -25,6 +25,7 @@ const TEST_LANGUAGES = [
   'c',
   'cpp',
   'bash',
+  'plpgsql',
 ].join(',');
 
 describe('LanguageParser', () => {
@@ -293,6 +294,51 @@ Content 2`;
     const result = parser.parseFile(hbsFile, 'main', 'tests/fixtures/handlebars.hbs');
     expect(result.chunks.length).toBeGreaterThan(0);
     expect(result.chunks[0].language).toBe('handlebars');
+  });
+
+  it('should recognize .sql file extension as plpgsql', () => {
+    const sqlFile = path.resolve(__dirname, '../fixtures/plpgsql.sql');
+    const result = parser.parseFile(sqlFile, 'main', 'tests/fixtures/plpgsql.sql');
+    expect(result.chunks.length).toBeGreaterThan(0);
+    expect(result.chunks[0].language).toBe('plpgsql');
+    expect(result.metrics.parserType).toBe('tree-sitter');
+  });
+
+  it('should extract symbols from PLpgSQL fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, '../fixtures/plpgsql.sql');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/plpgsql.sql');
+    const allSymbols = result.chunks.flatMap((chunk) => chunk.symbols);
+
+    expect(allSymbols).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'status_enum', kind: 'type.name' }),
+        expect.objectContaining({ name: 'accounts', kind: 'table.name' }),
+        expect.objectContaining({ name: 'active_accounts', kind: 'view.name' }),
+        expect.objectContaining({ name: 'calculate_bonus', kind: 'function.name' }),
+        expect.objectContaining({ name: 'calculate_bonus', kind: 'function.call' }),
+      ])
+    );
+  });
+
+  it('should extract exports from PLpgSQL fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, '../fixtures/plpgsql.sql');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/plpgsql.sql');
+    const allExports = result.chunks.flatMap((chunk) => chunk.exports || []);
+
+    expect(allExports).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'status_enum', type: 'named' }),
+        expect.objectContaining({ name: 'accounts', type: 'named' }),
+        expect.objectContaining({ name: 'active_accounts', type: 'named' }),
+        expect.objectContaining({ name: 'calculate_bonus', type: 'named' }),
+      ])
+    );
+  });
+
+  it('should parse PLpgSQL fixtures correctly', () => {
+    const filePath = path.resolve(__dirname, '../fixtures/plpgsql.sql');
+    const result = parser.parseFile(filePath, 'main', 'tests/fixtures/plpgsql.sql');
+    expect(cleanTimestamps(result.chunks)).toMatchSnapshot();
   });
 
   it('should parse C fixtures correctly', () => {

@@ -129,4 +129,15 @@ describe('parseLanguageNames', () => {
     const allLanguages = Object.keys(languageConfigurations);
     expect(allLanguages).toContain('bash');
   });
+
+  it('should parse plpgsql language', () => {
+    const result = parseLanguageNames('plpgsql');
+    expect(result).toEqual(['plpgsql']);
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+  });
+
+  it('should include plpgsql in supported languages', () => {
+    const allLanguages = Object.keys(languageConfigurations);
+    expect(allLanguages).toContain('plpgsql');
+  });
 });
